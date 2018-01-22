@@ -1,4 +1,8 @@
-#pragma once
+template<typename... TParameters>
+zEmitter<TParameters...>::Slot::Slot()
+{
+	mpNext = mpPrev = nullptr;	
+}
 
 template<typename... TParameters>
 zEmitter<TParameters...>::Slot::~Slot()
@@ -9,13 +13,19 @@ zEmitter<TParameters...>::Slot::~Slot()
 template<typename... TParameters>
 void zEmitter<TParameters...>::Slot::Disconnect()
 {
-	List::remove(*this);
+	if( mpNext != nullptr )
+	{
+		zEmitter::SlotList::remove(*this);
+		mpNext = nullptr;
+		mpPrev = nullptr;
+	}	
 }
 
 template<typename... TParameters>
-void zEmitter<TParameters...>::Slot::SetCallback(const typename Slot::Callback& _Callback)
+void zEmitter<TParameters...>::Slot::Connect(zEmitter& _Emitter, const typename Callback& _Callback)
 {
 	mCallback = _Callback;
+	_Emitter.mlstSlots.push_back(*this);
 }
 
 template<typename... TParameters>
@@ -25,21 +35,13 @@ const typename zEmitter<TParameters...>::Slot::Callback& zEmitter<TParameters...
 }
 
 template<typename... TParameters>
-void zEmitter<TParameters...>::Connect(Slot& _Slot, const typename Slot::Callback& _Callback)
-{
-	_Slot.SetCallback(_Callback);
-	mlstSlots.push_back(_Slot);
-}
-
-template<typename... TParameters>
 void zEmitter<TParameters...>::Signal(TParameters..._Values)const
 {
 	auto it = mlstSlots.begin();
 	while( it != mlstSlots.end() )
 	{
-		const Slot* pSlot = &(*it);
-		++it;	//Increment first, so if callback removes slot, won't affect iteration
-		pSlot->GetCallback()(_Values...);
+		const Slot& slot = *it++; //Increment before invoking callback, so if callback removes slot, won't affect iteration
+		slot.GetCallback()(_Values...);
 	}	
 }
 

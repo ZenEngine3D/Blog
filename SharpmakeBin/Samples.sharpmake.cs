@@ -1,22 +1,27 @@
 ﻿using Sharpmake;
 using System.Collections.Generic; //List
-//using System;
 
 namespace Samples
 {
 	public class Sample_Common : Project
 	{
 		public const string RootDir = @"[project.SharpmakeCsPath]\..\";
-
-		public Sample_Common(string ProjectName)
+		public bool WithEASTL = true;
+		
+		public Sample_Common(string InProjectName, bool InWithEASTL=true)		
 		{
-			Name = ProjectName;
+			Name = InProjectName;
+			WithEASTL = InWithEASTL;
 			AddTargets(new Target(Platform.win64, DevEnv.vs2015 | DevEnv.vs2017 | DevEnv.make, Optimization.Debug | Optimization.Release));
-			SourceRootPath = RootDir + @"Samples\" + ProjectName;
+			SourceRootPath = RootDir + @"Samples\" + InProjectName;
 			IsFileNameToLower = false;
 			IsTargetFileNameToLower = false;
-			AdditionalSourceRootPaths.Add(RootDir + @"\EASTL\Source");
-			AdditionalSourceRootPaths.Add(RootDir + @"\EASTL\Include");
+			
+			if( WithEASTL )
+			{
+				AdditionalSourceRootPaths.Add(RootDir + @"\EASTL\Source");
+				AdditionalSourceRootPaths.Add(RootDir + @"\EASTL\Include");
+			}
 		}
 
 		[Configure()]
@@ -25,12 +30,14 @@ namespace Samples
 			conf.ProjectFileName = "[project.Name]_[target.DevEnv]";
 			conf.ProjectPath = RootDir + @"\_Projects\[project.Name]";
 			conf.IncludePaths.Add(RootDir + @"\_Projects\[project.Name]");
-			conf.IncludePaths.Add(RootDir + @"\EASTL\Include");
-			conf.IncludePaths.Add(RootDir + @"\EASTL\test\packages\EABase\include\Common");
 			
-			conf.Defines.Add("_HAS_EXCEPTIONS=0");			// Exception turned off, let windows libs know
-			conf.Defines.Add("EA_COMPILER_NO_NOEXCEPT=0");	// Exception turned off, no need for NoExcept in EAStl lib
-			
+			if( WithEASTL )
+			{
+				conf.IncludePaths.Add(RootDir + @"\EASTL\Include");
+				conf.IncludePaths.Add(RootDir + @"\EASTL\test\packages\EABase\include\Common");			
+				conf.Defines.Add("_HAS_EXCEPTIONS=0");			// Exception turned off, let windows libs know
+				conf.Defines.Add("EA_COMPILER_NO_NOEXCEPT=0");	// Exception turned off, no need for NoExcept in EAStl lib
+			}
 			//List<string> DisabledWarning = new List<string>();
 			//DisabledWarning.Add("4577"); // 'noexcept' used with no exception handling mode specified;
 			//conf.Options.Add(new Sharpmake.Options.Vc.Compiler.DisableSpecificWarnings(DisabledWarning.ToArray()));
@@ -46,7 +53,8 @@ namespace Samples
 		public Sample001_Signal() : base("Sample001_Signal")
 		{} 
 	}
-
+	
+	
 	//==============================================================================================
 	// Solution
 	//==============================================================================================
@@ -68,7 +76,6 @@ namespace Samples
  			conf.SolutionPath = RootDir + "_Projects";
 
  			conf.AddProject<Sample001_Signal>(target);
-
 		}
 		[Sharpmake.Main]
 		public static void SharpmakeMain(Sharpmake.Arguments arguments)

@@ -1,6 +1,5 @@
 #pragma once
 
-#pragma once
 #include <functional>
 #include <EASTL/intrusive_list.h>
 
@@ -23,31 +22,31 @@ public:
 	//----------------------------------------------------------------------------------------------
 	class Slot : public eastl::intrusive_list_node
 	{	
-	public:							
-		typedef eastl::intrusive_list<Slot>			List;
-		typedef std::function<void(TParameters...)>	Callback;
-		typedef zEmitter<TParameters...>			Emitter;
+	public:									
+		typedef std::function<void(TParameters...)>	Callback;										//!< Callback function signature
+		typedef zEmitter<TParameters...>			Emitter;										//!< Useful to get emitter type that works with this slot type
 
 	public:
-													~Slot();
-		inline void									Disconnect();	//!< Remove this Slot from Emitter Listeners
-		inline const Callback&						GetCallback()const;
-		inline void									SetCallback(const typename Slot::Callback& _Callback);
-
+								Slot();
+								~Slot();															//!< Remove this slot from list kept in emitter, when slot is destroyed
+		inline void				Connect(zEmitter& _Emitter,const typename Callback& _Callback);		//!< Bind signal to a function to invoke when received
+		inline void				Disconnect();														//!< Remove this Slot from Emitter Listeners
+		inline const Callback&	GetCallback()const;
 	protected:
-		Callback									mCallback;	//!< Functions emitter should call when signaling
+		Callback				mCallback;															//!< Functions emitter should call when signaling
 	};
 
 	//----------------------------------------------------------------------------------------------
 	// Main content of the class
 	//----------------------------------------------------------------------------------------------
 public:	
-	inline void		Connect(Slot& _Slot, const typename Slot::Callback& _Callback);	//!< Connect a slot to an emitter
-	inline void		Signal(TParameters..._Values)const;								//!< Signal all slots connected to this emitter
-	inline void		DisconnectAll();												//!< Remove all slots connected to this emitter
+	inline void					Signal(TParameters..._Values)const;									//!< Signal all slots connected to this emitter
+	inline void					DisconnectAll();													//!< Remove all slots connected to this emitter
 
 protected:
-	typename Slot::List	mlstSlots;													//!< Linked list of all slots waiting for events
+	typedef eastl::intrusive_list<Slot> SlotList;
+	friend class Slot;																				//!< Allow access to mlstSlots when calling 'Connect'	
+	SlotList					mlstSlots;															//!< Linked list of all slots waiting for Signals	
 };
 
 #include "SignalEmitter.inl"
